@@ -1,0 +1,52 @@
+# PROTAC linker generation. The warhead and E3 ligand are fixed; only the
+# linker is generated, then the full degrader is assembled and validated.
+#   molgen run --config configs/protac.yaml
+
+mode: protac
+run_name: protac_demo
+pocket_cutoff: 5.0
+
+paths:
+  data_dir: data
+  output_dir: runs
+  receptor: example/receptor.pdb
+  reference_ligand: example/reference_ligand.sdf
+
+protac:
+  # Option A — supply the two binders directly, [*] marking attachment points.
+  warhead_smiles: null
+  e3_ligand_smiles: null
+
+  # Option B — supply a parent PROTAC and two anchor atom indices; the existing
+  # linker is excised with GetShortestPath + FragmentOnBonds and replaced.
+  parent_protac_smiles: null
+  warhead_anchor: null
+  e3_anchor: null
+
+  anchor_distance: null          # angstroms; constrains generated linker span
+  min_linker_heavy_atoms: 4
+  max_linker_heavy_atoms: 30
+
+generation:
+  backend: ollama:gemma3:12b
+  temperature: 0.9               # higher: linker chemotype variety matters most
+  n_molecules: 20
+  n_calls: 3
+  rounds: 1
+
+validation:
+  max_lipinski_violations: 4     # degraders live beyond rule-of-five by design
+  allow_alerts: true             # alerts recorded, not disqualifying
+  embed_3d: true
+
+diversity:
+  enabled: true
+  max_to_dock: 30
+  maxmin_selection: true
+
+docking:
+  enabled: true
+  executable: vina
+  exhaustiveness: 16
+  box_padding: 8.0               # larger: degraders are bigger than the warhead
+  compute_rmsd: true

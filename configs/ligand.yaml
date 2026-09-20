@@ -1,0 +1,51 @@
+# Small-molecule ligand generation against a holo receptor.
+#   molgen run --config configs/ligand.yaml
+
+mode: ligand
+run_name: ligand_demo
+ligand_resname: null        # null = treat every non-solvent heteroatom as ligand
+pocket_cutoff: 5.0          # angstroms from ligand to define pocket residues
+
+paths:
+  data_dir: data
+  output_dir: runs
+  receptor: example/receptor.pdb
+  reference_ligand: example/reference_ligand.sdf   # sets docking box + RMSD reference
+  known_actives: null        # optional .smi/.csv of actives for few-shot context
+  novelty_library: null      # optional library to screen generated compounds against
+
+generation:
+  backend: ollama:gemma3:12b
+  temperature: 0.8
+  max_tokens: 2048
+  n_molecules: 20            # per LLM call
+  n_calls: 3                 # oversample: mode collapse is the main failure here
+  rounds: 1                  # >1 enables docking-informed refinement
+  property_focus: null       # high_affinity | selectivity | blood_brain_barrier |
+                             # oral_bioavailability | fragment
+  diversity_hint: true
+
+validation:
+  max_lipinski_violations: 1
+  allow_alerts: false        # PAINS/Brenk matches are disqualifying in ligand mode
+  embed_3d: true
+
+diversity:
+  enabled: true
+  novelty_threshold: 0.85    # Tanimoto above this = near-duplicate of a known compound
+  max_to_dock: 50
+  maxmin_selection: true     # MaxMin subset rather than first-N
+  min_scaffold_diversity: 0.30
+
+docking:
+  enabled: true
+  executable: vina
+  use_wsl: false
+  exhaustiveness: 16
+  num_modes: 9
+  cpu: null
+  seed: 42
+  max_workers: 4
+  box_padding: 5.0
+  cubic_box: false
+  compute_rmsd: true

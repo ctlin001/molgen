@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install rdkit-pypi || pip install rdkit
+          pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check src tests
+
+      - name: Test
+        # Vina and Ollama are unavailable on CI runners.
+        run: pytest -m "not slow and not requires_vina and not requires_llm" --cov=molgen --cov-report=term-missing
+
+  cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          pip install rdkit-pypi || pip install rdkit
+          pip install -e .
+      - name: CLI smoke test
+        run: |
+          molgen check || true
+          molgen decompose "CC(=O)Oc1ccccc1C(=O)O"
+          molgen run --dry-run -r /dev/null || true

@@ -1,0 +1,29 @@
+# Ligand generation with Vina-GPU 2.1 under WSL2 (Windows + NVIDIA).
+# Paths are translated to /mnt/<drive>/... automatically.
+# Build instructions: docs/vina-gpu-wsl2.md
+#   molgen run --config configs/vina-gpu.yaml
+
+mode: ligand
+run_name: ligand_gpu
+
+paths:
+  data_dir: data
+  output_dir: runs
+  receptor: example/receptor.pdb
+  reference_ligand: example/reference_ligand.sdf
+
+generation:
+  backend: ollama:gemma3:12b
+  n_molecules: 40
+  n_calls: 4
+
+diversity:
+  max_to_dock: 200               # GPU throughput makes a wider screen affordable
+
+docking:
+  enabled: true
+  executable: /home/user/Vina-GPU-2.1/AutoDock-Vina-GPU-2-1
+  use_wsl: true
+  exhaustiveness: 32
+  max_workers: 1                 # the GPU is the bottleneck; do not oversubscribe
+  box_padding: 5.0

@@ -1,0 +1,60 @@
+# conda env create -f environment.yaml && conda activate molgen
+#
+# RDKit, Open Babel and AutoDock Vina are conda-only in practice; pip builds of
+# RDKit lag and lack the contrib modules (SA_Score) this project uses.
+name: molgen
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+
+  # cheminformatics
+  - rdkit>=2024.03.1          # SMILES, descriptors, BRICS, ETKDG, FilterCatalog
+  - openbabel>=3.1            # SDF/PDB <-> PDBQT conversion, protonation at pH 7.4
+
+  # structural biology
+  - biopython>=1.83           # PDB/mmCIF parsing, NeighborSearch KD-tree
+
+  # docking
+  - autodock-vina             # CPU Vina; Vina-GPU 2.1 is built separately, see docs
+
+  # numerics
+  - numpy>=1.26
+  - scipy>=1.11               # linear_sum_assignment for symmetry-aware RMSD
+  - pandas>=2.1
+
+  # visualisation and notebooks
+  - matplotlib>=3.8
+  - pillow>=10.1
+  - jupyterlab
+  - ipywidgets
+
+  # tooling
+  - pytest>=7.4
+  - ruff>=0.4
+
+  - pip
+  - pip:
+      - requests>=2.31        # Ollama REST client
+      - PyYAML>=6.0
+      - gemmi>=0.6.4          # fast mmCIF -> PDB
+      - -e .
+
+# Post-install
+# ------------
+# 1. Local LLM:
+#      ollama serve
+#      ollama pull gemma3:12b
+#    Windows: install from https://ollama.com/download, the service starts itself.
+#
+# 2. Receptor preparation (optional but recommended over Open Babel):
+#      ADFR suite -> provides `prepare_receptor`
+#      https://ccsb.scripps.edu/adfr/downloads/
+#
+# 3. GPU docking (optional, Windows + WSL2):
+#      see docs/vina-gpu-wsl2.md
+#
+# 4. Verify:
+#      molgen check
